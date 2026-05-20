@@ -1,5 +1,3 @@
-import tools.retargeter.retargeter as retagreter
-
 from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -120,6 +118,7 @@ def vis_compare_poses(src_pose, tgt_pose,
     return
 
 def plot_pose(fig, ax, t_pose, char_model, key_body_ids=None, plot_text=True, color='r'):
+    import tools.retargeter.retargeter as retagreter
     root_pos, root_rot_quat, joint_rot_quat = retagreter.extract_frame_data(t_pose, char_model)
     body_pos, body_rot = char_model.forward_kinematics(root_pos, root_rot_quat, joint_rot_quat)
     

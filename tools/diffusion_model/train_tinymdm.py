@@ -50,9 +50,9 @@ def generate(model, dataset, obs_space, config, out_motion_dir, enable_ema=False
 
         pos_sample = dataset.calc_joint_position_from_frame(frames)[None,...]
         dataset.plot_jnt(jnt_pos=pos_sample, out_path=os.path.join(out_motion_dir, f"anim_{i:03}"))
-    
+
     return
-    
+
 @torch.no_grad()
 def test(cfg_path, model_file, out_dir=None, num_samples=16):
     fixseed(0)
@@ -64,7 +64,7 @@ def test(cfg_path, model_file, out_dir=None, num_samples=16):
 
     with open(config["env_config"], "r") as stream:
         env_config = yaml.safe_load(stream)
-    
+
     out_motion_dir = os.path.join(out_dir, "samples")
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(out_motion_dir, exist_ok=True)
@@ -78,20 +78,20 @@ def test(cfg_path, model_file, out_dir=None, num_samples=16):
     priormodel = TinyMDMModel(config)
     prior_state_dict = torch.load(model_file, map_location=config["device"])
     priormodel.load_state_dict(prior_state_dict)
-    
+
     priormodel.eval()
     priormodel.to(config["device"])
-    
+
     generate(priormodel, dataset_env, obs_space, config, out_motion_dir=out_motion_dir,
             enable_ema=priormodel.model_ema, num_samples=num_samples)
     return
 
 def train(cfg_path, out_dir=None):
     assert out_dir is not None and out_dir != "", "Must specify --out_dir"
-    
+
     with open(cfg_path, "r") as stream:
         config = yaml.safe_load(stream)
-    
+
     env_file = config["env_config"]
     with open(env_file, "r") as stream:
         env_config = yaml.safe_load(stream)
@@ -103,7 +103,7 @@ def train(cfg_path, out_dir=None):
 
     out_env_config_file = os.path.join(out_dir, "env_config.yaml")
     shutil.copy(env_file, out_env_config_file)
-    
+
     config["env_config"] = out_env_config_file
     out_config_file = os.path.join(out_dir, "diffusion_config.yaml")
     with open(out_config_file, "w") as stream:
@@ -111,7 +111,7 @@ def train(cfg_path, out_dir=None):
 
     out_log_file = os.path.join(out_dir, "log.txt")
     log = build_logger(out_log_file)
-    
+
     batch_size = config["batch_size"]
     num_samples_stat = config.get("num_samples_stat", 10_000)
     output_iter = config.get("output_iter", 2_000)
@@ -120,7 +120,7 @@ def train(cfg_path, out_dir=None):
     dataset_env = MotionPriorData(config)
     obs_space = dataset_env.get_obs_space()
     num_obs_steps = env_config["num_disc_obs_steps"]
-    
+
     config["input_dim"] = obs_space.shape[-1]
     config["input_channel"] = int(config["input_dim"] / num_obs_steps)
     print(f"Input_channel: {config['input_channel']}")
@@ -130,7 +130,7 @@ def train(cfg_path, out_dir=None):
     model.update_normalizer(samples)
     optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'])
     model.to(config['device'])
-    
+
     model.train()
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of model parameters: {num_params / 1_000_000:.2f} M")
